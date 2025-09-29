@@ -18,7 +18,7 @@ function onSave()
     phaseId = phaseId,
     broadcastChange = broadcastChange,
     broadcastChangeVerbosity = broadcastChangeVerbosity,
-    pingMythos = pingMythos
+    pingAndLookAtPhase = pingAndLookAtPhase
   })
 end
 
@@ -35,7 +35,7 @@ function onLoad(savedData)
     phaseId = 1
     broadcastChange = false
     broadcastChangeVerbosity = false
-    pingMythos = false
+    pingAndLookAtPhase = false
   end
 
   self.createButton({
@@ -44,7 +44,7 @@ function onLoad(savedData)
     function_owner = self,
     width          = 600,
     height         = 600,
-    matColor       = { r = 0, g = 0, b = 0, a = 0 }
+    color       = { r = 0, g = 0, b = 0, a = 0 }
   })
 
   self.addContextMenuItem("Toggle Broadcasting", toggleBroadcast)
@@ -53,10 +53,12 @@ function onLoad(savedData)
 
   -- detect player mats
   local mats = {}
-  table.insert(mats, getObjectByName('Playermat 1: White'))
+  table.insert(mats, getObjectByName('Playermat 2: Orange'))
   table.insert(mats, getObjectByName('Playermat 2: Orange'))
   table.insert(mats, getObjectByName('Playermat 3: Green'))
   table.insert(mats, getObjectByName('Playermat 4: Red'))
+--  PlayermatApi.getMatForColor('All'
+
 end
 
 function toggleBroadcast(playerColor)
@@ -65,9 +67,9 @@ function toggleBroadcast(playerColor)
   for _, tracker in ipairs(getObjectsWithTag("LinkedPhaseTracker")) do
     tracker.setVar("broadcastChange", not broadcastChange)
     if not broadcastChange then
-      -- If broadcastChange is off, broadcastChangeVerbosity and pingMythos should also be off
+      -- If broadcastChange is off, broadcastChangeVerbosity and pingAndLookAtPhase should also be off
       tracker.setVar("broadcastChangeVerbosity", false)
-      tracker.setVar("pingMythos", false)
+      tracker.setVar("pingAndLookAtPhase", false)
     end
   end
   broadcastToAll("Broadcasting phase changes has been " .. (broadcastChange and "enabled." or "disabled."))
@@ -91,9 +93,9 @@ function togglePing(playerColor)
   -- Changes (toggles)
   Player[playerColor].clearSelectedObjects()
   for _, tracker in ipairs(getObjectsWithTag("LinkedPhaseTracker")) do
-    tracker.setVar("pingMythos", not pingMythos) -- Toggle  → Set the opposite
-    if pingMythos then
-      -- If pingMythos is on, broadcastChangeVerbosity and broadcastChange should also be on
+    tracker.setVar("pingAndLookAtPhase", not pingAndLookAtPhase) -- Toggle  → Set the opposite
+    if pingAndLookAtPhase then
+      -- If pingAndLookAtPhase is on, broadcastChangeVerbosity and broadcastChange should also be on
       tracker.setVar("broadcastChange", true)
       tracker.setVar("broadcastChangeVerbosity", true)
     end
@@ -102,7 +104,7 @@ function togglePing(playerColor)
     (broadcastChangeVerbosity and "enabled" or "disabled") .. 'and the Phase Tracker will bring you to the Mythos Area.')
 end
 
-function changeState(_, player_clicker_color, isRightClick)
+function changeState(_, playerColor, isRightClick)
   -- get newId for all trackers
   local newId = phaseId + (isRightClick and -1 or 1)
   if newId == 0 then
@@ -116,10 +118,10 @@ function changeState(_, player_clicker_color, isRightClick)
     broadcastToAll(PHASE_NAMES[newId])
   elseif broadcastChangeVerbosity then
     expressChangeWithVerbosity(newId)
-    if pingMythos and newId == 1 then
-      pingMythosPhase(player_clicker_color)
-    elseif pingMythos and newId == 2 then
-      pingPlayerMiniCards(player_clicker_color)
+    if pingAndLookAtPhase and newId == 1 then
+      pingMythosPhase(playerColor)
+    elseif pingAndLookAtPhase and newId == 2 then
+      pingPlayerMiniCards(playerColor)
     end
   end
 
@@ -133,8 +135,8 @@ function changeState(_, player_clicker_color, isRightClick)
       ",\"phaseId\":" .. newId ..
       ",\"broadcastChangeVerbosity\":" ..
       tostring(broadcastChangeVerbosity) ..
-      ",\"pingMythos\":" ..
-      tostring(pingMythos) ..
+      ",\"pingAndLookAtPhase\":" ..
+      tostring(pingAndLookAtPhase) ..
       "}"
 
   -- update all trackers with tag
@@ -176,8 +178,9 @@ function expressChangeWithVerbosity(newId)
   end
 end
 
-function pingMythosPhase(player_clicker_color)
-  pl = getPlayer(player_clicker_color)
+function pingMythosPhase(playerColor)
+  -- Pings the Doom Counter and moves the player's camera to it
+  pl = getPlayer(playerColor)
   all = getObjects()
   for _, obj in ipairs(all) do
     if obj.name == 'Doom Counter' or obj.getName() == 'Doom Counter' then
@@ -188,9 +191,10 @@ function pingMythosPhase(player_clicker_color)
   end
 end
 
-function pingPlayerMiniCards(player_clicker_color)
+function pingPlayerMiniCards(playerColor)
+  -- Pings the Minicards and moves the camera to one of them
   all = getObjects()
-  pl = getPlayer(player_clicker_color)
+  pl = getPlayer(playerColor)
   found = 0
   for _, obj in ipairs(all) do
     if obj.type == 'Card' then

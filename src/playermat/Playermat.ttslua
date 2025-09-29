@@ -1896,6 +1896,18 @@ function getEncounterCardDrawPosition(stack)
   return drawPos
 end
 
+-- returns the table that contains the six positions for the threat area
+function getThreatAreaPositions()
+  positions = {}
+  local searchPos = Vector(-0.91, 0.5, -0.625)
+  for i = 1, 5 do
+    local globalSearchPos = self.positionToWorld(searchPos)
+    table.insert(positions, globalSearchPos)
+    searchPos.x = searchPos.x + 0.455
+  end
+  return positions
+end
+
 -- creates / removes the draw 1 button
 ---@param visible? boolean Whether the draw 1 button should be visible
 function showDrawButton(visible)
