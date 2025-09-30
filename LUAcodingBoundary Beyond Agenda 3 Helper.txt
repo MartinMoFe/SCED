@@ -1,0 +1,708 @@
+﻿
+-- Bundled by luabundle {"version":"1.6.0"}
+local __bundle_require, __bundle_loaded, __bundle_register, __bundle_modules = (function(superRequire)
+	local loadingPlaceholder = {[{}] = true}
+
+	local register
+	local modules = {}
+
+	local require
+	local loaded = {}
+
+	register = function(name, body)
+		if not modules[name] then
+			modules[name] = body
+		end
+	end
+
+	require = function(name)
+		local loadedModule = loaded[name]
+
+		if loadedModule then
+			if loadedModule == loadingPlaceholder then
+				return nil
+			end
+		else
+			if not modules[name] then
+				if not superRequire then
+					local identifier = type(name) == 'string' and '\"' .. name .. '\"' or tostring(name)
+					error('Tried to require ' .. identifier .. ', but no such module has been registered')
+				else
+					return superRequire(name)
+				end
+			end
+
+			loaded[name] = loadingPlaceholder
+			loadedModule = modules[name](require, loaded, register, modules)
+			loaded[name] = loadedModule
+		end
+
+		return loadedModule
+	end
+
+	return require, loaded, register, modules
+end)(nil)
+__bundle_register("__root", function(require, _LOADED, __bundle_register, __bundle_modules)
+require("playarea/BoundaryBeyondAncientDetector")
+end)
+__bundle_register("core/GUIDReferenceApi", function(require, _LOADED, __bundle_register, __bundle_modules)
+do
+  local GUIDReferenceApi = {}
+
+  local function callhandler(functionName, argument)
+    return getObjectFromGUID("123456").call(functionName, argument)
+  end
+
+  -- General information:
+  --- "owner" is a string that describes the parent object
+  --- "type" is a string that describes the type of object
+
+  -- Returns the matching object
+  function GUIDReferenceApi.getObjectByOwnerAndType(owner, type)
+    return callhandler("getObjectByOwnerAndType", { owner = owner, type = type })
+  end
+
+  -- Returns all matching objects as a table with references
+  function GUIDReferenceApi.getObjectsByType(type)
+    return callhandler("getObjectsByType", type)
+  end
+
+  -- Returns all matching objects as a table with references
+  function GUIDReferenceApi.getObjectsByOwner(owner)
+    return callhandler("getObjectsByOwner", owner)
+  end
+
+  -- Sends new information to the reference handler to edit the main index (if type/guid are omitted, entry will be removed)
+  function GUIDReferenceApi.editIndex(owner, type, guid)
+    return callhandler("editIndex", { owner = owner, type = type, guid = guid })
+  end
+
+  -- Returns the owner of an object or the object it's located on
+  function GUIDReferenceApi.getOwnerOfObject(object)
+    return callhandler("getOwnerOfObject", object)
+  end
+
+  function GUIDReferenceApi.removeObjectByOwnerAndType(owner, type)
+    return callhandler("removeObjectByOwnerAndType", { owner = owner, type = type })
+  end
+
+  return GUIDReferenceApi
+end
+end)
+__bundle_register("playarea/BoundaryBeyondAncientDetector", function(require, _LOADED, __bundle_register, __bundle_modules)
+local PlayAreaApi = require("playarea/PlayAreaApi")
+local SearchLib   = require("util/SearchLib")
+
+allLines          = allLines or {}
+
+
+function onLoad()
+
+    initial_locations = {}
+
+    self.createButton({
+        label = "Highlight Ancient Locations in play",
+        click_function = "highlightAncient",
+        function_owner = self,
+        position = { 0, 0.5, -1.5 },
+        rotation = { 0, 0, 0 },
+        width = 2500,
+        height = 300,
+        font_size = 150,
+        color = { 0.5, 0.5, 1 },
+        font_color = { 1, 1, 1 },
+        tooltip = "Remove Agenda and Act, and move to Agenda and Act 3"
+    })
+
+    self.createButton({
+        label = "Mark the map icons in the map, to help replacing locations",
+        click_function = "markSymbolsInTable",
+        function_owner = self,
+        position = { 0, 0.5, -0.5 },
+        rotation = { 0, 0, 0 },
+        width = 2500,
+        height = 300,
+        font_size = 150,
+        color = { 0.5, 0.5, 1 },
+        font_color = { 1, 1, 1 },
+        tooltip = ""
+    })
+
+    self.createButton({
+        label = "Show forced effects in the Ancient locations",
+        click_function = "showForcedEffects",
+        function_owner = self,
+        position = { 0, 0.5, 0.5 },
+        rotation = { 0, 0, 0 },
+        width = 2500,
+        height = 300,
+        font_size = 150,
+        color = { 0.5, 0.6, 0.9 },
+        font_color = { 1, 1, 1 },
+        tooltip = ""
+    })
+
+    self.createButton({
+        label = "Place Amrita and Act and Agenda",
+        click_function = "placeActAgenda3",
+        function_owner = self,
+        position = { 0, 0.5, 1.5 },
+        rotation = { 0, 0, 0 },
+        width = 2500,
+        height = 300,
+        font_size = 150,
+        color = { 0.5, 0.6, 0.9 },
+        font_color = { 1, 1, 1 },
+        tooltip = ""
+    })
+end
+
+    function highlightAncient()
+      
+      local allObjects = getAllObjects()
+      local objectsAncient = {}
+
+      for _, object in ipairs(allObjects) do
+        local descripcion = object.getDescription() or ""
+        if string.find(descripcion, "Ancient") and PlayAreaApi.isInPlayArea(object) then
+          table.insert(objectsAncient, object)
+        end
+      end
+
+      for _, ancient in ipairs(objectsAncient) do
+        ancient.highlightOn({ 0, 1, 0 }, 10)  
+      end
+      printToAll('Please, move manually the Ancient locations without clues to the Victory Display')
+    end
+
+
+
+    function markSymbolsInTable()
+        -- Obtener todos los objetos en la mesa
+          local allObjects = getAllObjects()
+          for _, object in ipairs(allObjects) do
+            local descripcion = object.getDescription() or ""
+            if PlayAreaApi.isInPlayArea(object) and (string.find(descripcion, "Ancient") or string.find(descripcion, "Mexico City")) then
+              local rawNotes = object.getGMNotes() or "{}"
+              local metadata = JSON.decode(rawNotes) or {}
+              log(metadata)
+              local symbol = metadata['locationFront']["icons"] or nil
+              if symbol ~= nil then drawSymbol(object, symbol) end
+            end
+          end
+          printToAll('Please, place manually the six Ancient locations in play, where the Present Day locations are ')
+    end
+
+    function showForcedEffects()
+      -- list of target GUIDs
+      local targetGuids = {
+        ["80cef8"] = true,
+        ["fb0083"] = true,
+        ["5bc035"] = true,
+        ["0e6a01"] = true,
+        ["07056f"] = true,
+        ["0261d3"] = true
+        
+      }
+
+      -- go through all objects on the table
+      for _, obj in ipairs(getAllObjects()) do
+        if PlayAreaApi.isInPlayArea(obj) and targetGuids[obj.guid] then
+          -- apply a red highlight for 10 seconds
+          obj.highlightOn({ 1, 0, 0 }, 10)
+        end
+      end
+      printToAll("Please, remember that Ancient locations have FORCED hazardous effects when they enter play")
+      printToAll("Remember to lose your CLUES.")
+    end
+
+    function placeActAgenda3()
+      -- get the chest (guid 7a167a)
+      local chest = getObjectFromGUID("7a167a")
+      if not chest then
+        print("Chest (7a167a) not found")
+        return
+      end
+
+      -- find the bag inside the chest
+      local chestContents = chest.getObjects()
+      if #chestContents == 0 then
+        print("Set-Aside Chest is empty")
+        return
+      end
+
+      local bagData = nil
+      for _, data in ipairs(chestContents) do
+        if data.nickname == "Agenda 3 & Act 3" then
+          bagData = data
+          break
+        end
+      end
+
+      if not bagData then
+        print("Bag not found inside chest")
+        return
+      end
+
+      -- take out the bag near a reference position (guid 70b9f6)
+      local pos    = getObjectFromGUID("70b9f6").getPosition()
+      local bagObj = chest.takeObject({ guid = bagData.guid, position = pos, smooth = true })
+
+      -- tint the bag white
+      bagObj.setColorTint({ r = 1, g = 1, b = 1 })
+
+      -- wait until the bag is on the table
+      Wait.condition(function()
+        if not bagObj then
+          print("Inner object is not a bag")
+          return
+        end
+
+        -- now inspect the bag contents
+        local bagContents = bagObj.getObjects()
+        for _, item in ipairs(bagContents) do
+          if item.nickname == "The Return Trip" then
+            local dest = getObjectFromGUID("4a3aa4").getPosition()
+            bagObj.takeObject({
+              guid     = item.guid,
+              position = dest,
+              smooth   = true
+            })
+          elseif item.nickname == "Time Collapsing" then
+            local dest = getObjectFromGUID("652ff3").getPosition()
+            bagObj.takeObject({
+              guid     = item.guid,
+              position = dest,
+              smooth   = true
+            })
+          end
+        end
+      end, function() return bagObj.resting end) -- wait until the bag is placed
+      printToAll("Placing new Act 3 and Agenda 3. Placing Padme Amrita in Templo Mayor")
+      -- after handling the bag, inspect chest again
+      local chestContents2 = chest.getObjects()
+      for _, data in ipairs(chestContents2) do
+        if data.nickname == "Padma Amrita" then
+          local targetObj = getObjectFromGUID("ae5d5c")
+          if targetObj then
+            local targetPos = targetObj.getPosition()
+            local targetRot = targetObj.getRotation()
+
+            -- displace slightly (0.3 on X, 0.3 on Z)
+            local displacedPos = {
+              x = targetPos.x + 0.3,
+              y = targetPos.y + 2,         -- raise so it falls nicely
+              z = targetPos.z + 1.3
+            }
+
+            -- rotation offset by 10 degrees around Y
+            local newRot = {
+              x = targetRot.x,
+              y = targetRot.y + 10,
+              z = targetRot.z
+            }
+
+            chest.takeObject({
+              guid     = data.guid,
+              position = displacedPos,
+              rotation = newRot,
+              smooth   = true,
+              flip     = false
+            })
+          end
+          break     -- stop after finding Padma Amrita
+        end
+      end
+    end
+
+
+-- Helper functions
+
+function findByName(name)
+    for _, o in ipairs(getAllObjects()) do
+        if o.getName() == name then
+            return o
+        end
+    end
+    return nil
+end
+
+function connectObjects(objA, objB, color, thickness)
+
+    if not objA or not objB then
+        return
+    end
+
+    local p1 = objA.getPosition()
+    local p2 = objB.getPosition()
+
+    local newLine = {
+        points    = { p1, p2 },
+        color     = color or { 0, 0, 1 },
+        thickness = thickness or 0.2
+    }
+
+    table.insert(allLines, newLine)
+
+    Global.setVectorLines(allLines)
+end
+
+function drawRectangle(objA, color, thickness)
+  if not objA then return end
+
+  local pos = objA.getPosition()
+  local bounds = objA.getBounds().size -- tamaÃ±o del collider
+  local halfX = bounds.x / 2
+  local halfZ = bounds.z / 2
+
+  -- esquinas en coordenadas globales
+  local p1 = { x = pos.x - halfX, y = pos.y, z = pos.z - halfZ }
+  local p2 = { x = pos.x + halfX, y = pos.y, z = pos.z - halfZ }
+  local p3 = { x = pos.x + halfX, y = pos.y, z = pos.z + halfZ }
+  local p4 = { x = pos.x - halfX, y = pos.y, z = pos.z + halfZ }
+
+  -- aÃ±adir las 4 lÃ­neas al array global
+  table.insert(allLines, { points = { p1, p2 }, color = color or { 0, 0, 1 }, thickness = thickness or 0.1 })
+  table.insert(allLines, { points = { p2, p3 }, color = color or { 0, 0, 1 }, thickness = thickness or 0.1 })
+  table.insert(allLines, { points = { p3, p4 }, color = color or { 0, 0, 1 }, thickness = thickness or 0.1 })
+  table.insert(allLines, { points = { p4, p1 }, color = color or { 0, 0, 1 }, thickness = thickness or 0.1 })
+
+  -- refrescar los vector lines
+  Global.setVectorLines(allLines)
+end
+
+function drawSymbol(ancient, symbol)
+  if not ancient then return end
+
+  local pos = ancient.getPosition()
+  local center = { x = pos.x, y = pos.y, z = pos.z }
+
+  local thickness = 0.1
+  local color = { 1, 1, 0 }
+
+  if symbol == 'Star' then
+    color = 'Black'
+    local radius = 2
+    local points = {}
+    for i = 0, 4 do
+      local angle = math.rad(72 * i - 90)
+      local px = center.x + radius * math.cos(angle)
+      local pz = center.z + radius * math.sin(angle)
+      table.insert(points, { x = px, y = center.y, z = pz })
+    end
+    local order = { 1, 3, 5, 2, 4, 1 }
+    for i = 1, #order - 1 do
+      local p1 = points[order[i]]
+      local p2 = points[order[i + 1]]
+      table.insert(allLines, { points = { p1, p2 }, color = color, thickness = thickness })
+    end
+
+  elseif symbol == 'Circle' then
+    color = 'Yellow'
+    local radius = 2
+    local segments = 24
+    local points = {}
+    for i = 0, segments do
+      local angle = math.rad((360 / segments) * i)
+      local px = center.x + radius * math.cos(angle)
+      local pz = center.z + radius * math.sin(angle)
+      table.insert(points, { x = px, y = center.y, z = pz })
+    end
+    for i = 1, #points - 1 do
+      table.insert(allLines, { points = { points[i], points[i + 1] }, color = color, thickness = thickness })
+    end
+
+  elseif symbol == 'Diamond' then
+    color = 'Green'
+    local size = 2
+    local p1 = { x = center.x, y = center.y, z = center.z - size }
+    local p2 = { x = center.x + size, y = center.y, z = center.z }
+    local p3 = { x = center.x, y = center.y, z = center.z + size }
+    local p4 = { x = center.x - size, y = center.y, z = center.z }
+    table.insert(allLines, { points = { p1, p2 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p2, p3 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p3, p4 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p4, p1 }, color = color, thickness = thickness })
+  elseif symbol == 'Square' then
+    color = { 1, 0, 0 }
+    local size = 2
+    local p1 = { x = center.x - size, y = center.y, z = center.z - size }
+    local p2 = { x = center.x + size, y = center.y, z = center.z - size }
+    local p3 = { x = center.x + size, y = center.y, z = center.z + size }
+    local p4 = { x = center.x - size, y = center.y, z = center.z + size }
+    table.insert(allLines, { points = { p1, p2 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p2, p3 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p3, p4 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p4, p1 }, color = color, thickness = thickness })
+  elseif symbol == 'Heart' then
+    color = { 1, 0.5, 0.5 }
+    local size = 1.5
+    local steps = 32
+    local points = {}
+    for i = 0, steps do
+      local t = (i / steps) * 2 * math.pi
+      local x = size * 16 * math.sin(t) ^ 3 / 16
+      local z = -size * (13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)) / 16
+      table.insert(points, { x = center.x + x, y = center.y, z = center.z + z })
+    end
+    for i = 1, #points - 1 do
+      table.insert(allLines, { points = { points[i], points[i + 1] }, color = color, thickness = thickness })
+    end
+  elseif symbol == 'Triangle' then
+    color = { 0, 0, 0.8 }
+    local size = 2
+    local p1 = { x = center.x, y = center.y, z = center.z - size }
+    local p2 = { x = center.x + size, y = center.y, z = center.z + size }
+    local p3 = { x = center.x - size, y = center.y, z = center.z + size }
+    table.insert(allLines, { points = { p1, p2 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p2, p3 }, color = color, thickness = thickness })
+    table.insert(allLines, { points = { p3, p1 }, color = color, thickness = thickness })
+  end
+
+  -- actualizar
+  Global.setVectorLines(allLines)
+end
+
+end)
+__bundle_register("playarea/PlayAreaApi", function(require, _LOADED, __bundle_register, __bundle_modules)
+do
+  local PlayAreaApi = {}
+  local GUIDReferenceApi = require("core/GUIDReferenceApi")
+
+  local function getPlayArea()
+    return GUIDReferenceApi.getObjectByOwnerAndType("Mythos", "PlayArea")
+  end
+
+  local function getPlayAreaImageSelector()
+    return GUIDReferenceApi.getObjectByOwnerAndType("Mythos", "PlayAreaImageSelector")
+  end
+
+  local function getInvestigatorCounter()
+    return GUIDReferenceApi.getObjectByOwnerAndType("Mythos", "InvestigatorCounter")
+  end
+
+  -- Returns the current value of the investigator counter from the playermat
+  ---@return number: Number of investigators currently set on the counter
+  function PlayAreaApi.getInvestigatorCount()
+    return getInvestigatorCounter().getVar("val")
+  end
+
+  -- Updates the current value of the investigator counter from the playermat
+  ---@param count number Number of investigators to set on the counter
+  function PlayAreaApi.setInvestigatorCount(count)
+    getInvestigatorCounter().call("updateVal", count)
+  end
+
+  -- Updates the play area iamge gallery
+  function PlayAreaApi.updatePlayAreaGallery()
+    getPlayAreaImageSelector().call("updatePlayAreaGallery")
+  end
+
+  -- Move all contents on the play area (cards, tokens, etc) one slot in the given direction. Certain
+  -- fixed objects will be ignored, as will anything the player has tagged with 'displacement_excluded'
+  ---@param playerColor string Color of the player requesting the shift for messages
+  function PlayAreaApi.shiftContentsUp(playerColor)
+    getPlayArea().call("shiftContentsUp", playerColor)
+  end
+
+  function PlayAreaApi.shiftContentsDown(playerColor)
+    getPlayArea().call("shiftContentsDown", playerColor)
+  end
+
+  function PlayAreaApi.shiftContentsLeft(playerColor)
+    getPlayArea().call("shiftContentsLeft", playerColor)
+  end
+
+  function PlayAreaApi.shiftContentsRight(playerColor)
+    getPlayArea().call("shiftContentsRight", playerColor)
+  end
+
+  ---@param state boolean This controls whether location connections should be drawn
+  function PlayAreaApi.setConnectionDrawState(state)
+    getPlayArea().call("setConnectionDrawState", state)
+  end
+
+  ---@param color string Connection color to be used for location connections
+  function PlayAreaApi.setConnectionColor(color)
+    getPlayArea().call("setConnectionColor", color)
+  end
+
+  -- triggers an update
+  function PlayAreaApi.rebuildConnectionList()
+    getPlayArea().call("rebuildConnectionList")
+  end
+
+  -- Event to be called when the current scenario has changed
+  ---@param temporaryDisable boolean True if connections are disabled for this scenario
+  function PlayAreaApi.onScenarioChanged(temporaryDisable)
+    getPlayArea().call("onScenarioChanged", temporaryDisable)
+  end
+
+  -- Sets this playermat's snap points to limit snapping to locations or not.
+  -- If matchTypes is false, snap points will be reset to snap all cards.
+  ---@param matchCardTypes boolean Whether snap points should only snap for the matching card types
+  function PlayAreaApi.setLimitSnapsByType(matchCardTypes)
+    getPlayArea().call("setLimitSnapsByType", matchCardTypes)
+  end
+
+  -- Receiver for the Global tryObjectEnterContainer event.  Used to clear vector lines from dragged
+  -- cards before they're destroyed by entering the container
+  function PlayAreaApi.tryObjectEnterContainer(container, object)
+    getPlayArea().call("tryObjectEnterContainer", { container = container, object = object })
+  end
+
+  -- Stop tracking a location for connection drawing / VP calculation
+  ---@param card tts__Object Card to (maybe) stop tracking
+  function PlayAreaApi.maybeUntrackLocation(card)
+    getPlayArea().call("maybeUntrackLocation", card)
+  end
+
+  -- Counts the VP on locations in the play area
+  function PlayAreaApi.countVP()
+    return getPlayArea().call("countVP")
+  end
+
+  -- Highlights all locations in the play area without metadata
+  ---@param state boolean True if highlighting should be enabled
+  function PlayAreaApi.highlightMissingData(state)
+    return getPlayArea().call("highlightMissingData", state)
+  end
+
+  -- Highlights all locations in the play area with VP
+  ---@param state boolean True if highlighting should be enabled
+  function PlayAreaApi.highlightCountedVP(state)
+    return getPlayArea().call("countVP", state)
+  end
+
+  -- Checks if an object is in the play area (returns true or false)
+  function PlayAreaApi.isInPlayArea(object)
+    return getPlayArea().call("isInPlayArea", object)
+  end
+
+  -- Returns the current surface of the play area
+  function PlayAreaApi.getSurface()
+    return getPlayArea().getCustomObject().image
+  end
+
+  -- Updates the surface of the play area
+  function PlayAreaApi.updateSurface(url)
+    getPlayArea().call("updateSurface", url)
+  end
+
+  -- Readies cards in the PlayArea
+  function PlayAreaApi.readyCards()
+    getPlayArea().call("readyCards")
+  end
+
+  -- Returns the rotation of the PlayArea
+  function PlayAreaApi.returnRotation()
+    return getPlayArea().getRotation()
+  end
+
+  -- Converts world position to grid coordinates (e.g., {x=-30.5, z=8})
+  function PlayAreaApi.worldToGrid(pos)
+    local grid = getPlayArea().call("worldToGrid", pos)
+    return { x = grid.x, y = grid.y }
+  end
+
+  -- Converts grid coordinates (e.g., {x=1.5, y=-2}) back to world position
+  function PlayAreaApi.gridToWorld(grid)
+    return Vector(getPlayArea().call("gridToWorld", grid))
+  end
+
+  -- Returns a deep copy of the currently tracked locations
+  function PlayAreaApi.getTrackedLocations()
+    local t = {}
+    for k, v in pairs(getPlayArea().call("getTrackedLocations", {})) do
+      t[k] = v
+    end
+    return t
+  end
+
+  return PlayAreaApi
+end
+end)
+__bundle_register("util/SearchLib", function(require, _LOADED, __bundle_register, __bundle_modules)
+do
+  local SearchLib = {}
+  local FILTER_FUNCTIONS = {
+    isCard           = function(x) return x.type == "Card" end,
+    isDeck           = function(x) return x.type == "Deck" end,
+    isCardOrDeck     = function(x) return x.type == "Card" or x.type == "Deck" end,
+    isClue           = function(x) return x.memo == "clueDoom" and x.is_face_down == false end,
+    isDoom           = function(x) return x.memo == "clueDoom" and x.is_face_down == true end,
+    isInteractable   = function(x) return x.interactable end,
+    isTileOrToken    = function(x) return not x.Book and (x.type == "Tile" or x.type == "Generic") end,
+    isUniversalToken = function(x) return x.getMemo() == "universalActionAbility" end,
+  }
+
+  -- performs the actual search and returns a filtered list of object references
+  ---@param pos tts__Vector Global position
+  ---@param rot? tts__Vector Global rotation
+  ---@param size table Size
+  ---@param filter? string Name of the filter function
+  ---@param direction? table Direction (positive is up)
+  ---@param maxDistance? number Distance for the cast
+  ---@param debug? boolean Whether the debug boxes should be shown
+  local function returnSearchResult(pos, rot, size, filter, direction, maxDistance, debug)
+    local filterFunc = filter and FILTER_FUNCTIONS[filter]
+    local searchResult = Physics.cast({
+      origin       = pos,
+      direction    = direction or { 0, 1, 0 },
+      orientation  = rot or { 0, 0, 0 },
+      type         = 3,
+      size         = size,
+      max_distance = maxDistance or 0,
+      debug        = debug or false
+    })
+
+    -- filter the result for matching objects
+    local objList = {}
+    for _, v in ipairs(searchResult) do
+      if (not filter or filterFunc(v.hit_object)) then
+        table.insert(objList, v.hit_object)
+      end
+    end
+    return objList
+  end
+
+  -- searches the specified area
+  function SearchLib.inArea(pos, rot, size, filter, debug)
+    return returnSearchResult(pos, rot, size, filter, nil, nil, debug)
+  end
+
+  -- searches the area on an object
+  function SearchLib.onObject(obj, filter, scale, debug)
+    scale      = scale or 1
+    local pos  = obj.getPosition() + Vector(0, 1, 0) -- offset by half the cast's height
+    local size = obj.getBounds().size:scale(scale):setAt("y", 2)
+    return returnSearchResult(pos, nil, size, filter, nil, nil, debug)
+  end
+
+  -- searches the area directly below an object
+  function SearchLib.belowObject(obj, filter, scale, debug)
+    scale        = scale or 1
+    local objPos = obj.getPosition()
+    local pos    = objPos + Vector(0, -objPos.y / 2, 0) -- offset by half the cast's height
+    local size   = obj.getBounds().size:scale(scale):setAt("y", objPos.y)
+    return returnSearchResult(pos, nil, size, filter, nil, nil, debug)
+  end
+
+  -- searches the specified position (a single point)
+  function SearchLib.atPosition(pos, filter, debug)
+    local size = { 0.1, 2, 0.1 }
+    return returnSearchResult(pos, nil, size, filter, nil, nil, debug)
+  end
+
+  -- searches below the specified position (downwards until y = 0)
+  function SearchLib.belowPosition(pos, filter, debug)
+    local size = { 0.1, 2, 0.1 }
+    local direction = { 0, -1, 0 }
+    local maxDistance = pos.y
+    return returnSearchResult(pos, nil, size, filter, direction, maxDistance, debug)
+  end
+
+  return SearchLib
+end
+end)
+return __bundle_require("__root")
