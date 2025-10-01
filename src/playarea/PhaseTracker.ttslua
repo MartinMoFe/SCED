@@ -1,8 +1,5 @@
 local PlayermatApi = require("playermat/PlayermatApi")
-<<<<<<< HEAD
 local PlayAreaApi  = require("playarea/PlayAreaApi")
-=======
->>>>>>> PhaseTracker2
 
 local PHASE_NAMES  = {
   "I. Mythos Phase",
@@ -61,12 +58,7 @@ function onLoad(savedData)
   table.insert(mats, getObjectByName('Playermat 2: Orange'))
   table.insert(mats, getObjectByName('Playermat 3: Green'))
   table.insert(mats, getObjectByName('Playermat 4: Red'))
-<<<<<<< HEAD
   --  PlayermatApi.getMatForColor('All'
-=======
---  PlayermatApi.getMatForColor('All'
-
->>>>>>> PhaseTracker2
 end
 
 -- Context menu functions
@@ -114,11 +106,7 @@ function togglePing(playerColor)
     (broadcastChangeVerbosity and "enabled" or "disabled") .. 'and the Phase Tracker will bring you to the Mythos Area.')
 end
 
-<<<<<<< HEAD
 -- Functions that run when changing phase
-=======
--- Functions to run
->>>>>>> PhaseTracker2
 
 function changeState(_, playerColor, isRightClick)
   -- get newId for all trackers
@@ -186,10 +174,7 @@ function expressChangeWithVerbosity(newId)
   elseif newId == 3 then
     printToAll('End of Investigation Phase', color_bone)
     printToAll('Enemy Phase.', color_bone)
-<<<<<<< HEAD
     showEnemyInfo(color_bone)
-=======
->>>>>>> PhaseTracker2
   elseif newId == 4 then
     printToAll('End of Enemy Phase', color_bone)
     printToAll('Upkeep Phase.', color_bone)
@@ -240,7 +225,6 @@ function showHandResourceInfo()
   end
 end
 
-<<<<<<< HEAD
 function showEnemyInfo(colorPrint)
   local enemies = {}
   for _, obj in ipairs(getObjects()) do
@@ -266,8 +250,6 @@ end
 
 -- Helper
 
-=======
->>>>>>> PhaseTracker2
 function getPlayer(color)
   for _, pl in ipairs(Player.getPlayers()) do
     if pl.color == color then
