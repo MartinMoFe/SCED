@@ -58,7 +58,7 @@ function onLoad(savedData)
   table.insert(mats, getObjectByName('Playermat 2: Orange'))
   table.insert(mats, getObjectByName('Playermat 3: Green'))
   table.insert(mats, getObjectByName('Playermat 4: Red'))
-  --  PlayermatApi.getMatForColor('All'
+  --log(PlayermatApi.getMatForColor('White'))
 end
 
 -- Context menu functions
@@ -129,11 +129,10 @@ function changeState(_, playerColor, isRightClick)
     elseif pingAndLookAtPhase and newId == 3 then
       local enemies = getEnemiesInPlayArea()
       if #enemies == 1 then
-        pingSingleMonster(playerColor, enemies[1])
+        moveToSingleMonster(playerColor, enemies[1])
       end     
     end
   end
-  --
 
   --
   local data = self.getData()
@@ -162,6 +161,11 @@ function changeState(_, playerColor, isRightClick)
     })
   end
 end
+
+-- function hotkeyAdapter(playerColor, object, pointerPosition, isKeyUp)
+--   if isKeyUp then return end
+--   changeState(object, playerColor, false)
+-- end
 
 function expressChangeWithVerbosity(newId)
   -- This function shows every change in the Phase tracker
@@ -216,10 +220,10 @@ function pingPlayerMiniCards(playerColor)
   end
 end
 
-function pingSingleMonster(playerColor, monster)
+function moveToSingleMonster(playerColor, monster)
   pos = monster.getPosition()
   pl = getPlayer(playerColor)
-  pl.pingTable(pos)
+  pl.lookAt({ position = pos, pitch = 90, yaw = 90, distance = 40 })
 end
 
 function showHandResourceInfo()
