@@ -1,4 +1,5 @@
 local PlayermatApi = require("playermat/PlayermatApi")
+local PlayAreaApi  = require("playarea/PlayAreaApi")
 
 local PHASE_NAMES  = {
   "I. Mythos Phase",
@@ -171,6 +172,7 @@ function expressChangeWithVerbosity(newId)
   elseif newId == 3 then
     printToAll('End of Investigation Phase', color_bone)
     printToAll('Enemy Phase.', color_bone)
+    showEnemyInfo(color_bone)
   elseif newId == 4 then
     printToAll('End of Enemy Phase', color_bone)
     printToAll('Upkeep Phase.', color_bone)
@@ -218,6 +220,28 @@ function showHandResourceInfo()
     local num = #cards
     local resources = PlayermatApi.getCounterValue(matColor, "ResourceCounter")
     printToAll(matColor .. ' has ' .. num .. ' cards in hand and ' .. resources .. ' resources.', color)
+  end
+end
+
+function showEnemyInfo(colorPrint)
+  local enemies = {}
+  for _, obj in ipairs(getObjects()) do
+    if PlayAreaApi.isInPlayArea(obj) then
+      local description = obj.getDescription()
+      local rawNotes = obj.getGMNotes() or "{}"
+      local metadata = JSON.decode(rawNotes) or {}
+      local type = metadata['type'] or ''
+      if type == 'Enemy' then
+        table.insert(enemies, obj)
+        obj.highlightOn({ 0, 1, 0 }, 10)
+      end
+    end
+  end
+  local num = #enemies
+  if num > 1 then
+    printToAll('There are ' .. tostring(num) .. ' enemies', colorPrint)
+  elseif num == 1 then
+    printToAll('There is ' .. tostring(num) .. ' enemy', colorPrint)
   end
 end
 
