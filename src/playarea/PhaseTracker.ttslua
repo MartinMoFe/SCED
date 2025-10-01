@@ -61,6 +61,8 @@ function onLoad(savedData)
 
 end
 
+-- Context menu functions
+
 function toggleBroadcast(playerColor)
   -- Changes (toggles) the if the phase changes are broadcast or not
   Player[playerColor].clearSelectedObjects()
@@ -103,6 +105,8 @@ function togglePing(playerColor)
   broadcastToAll("Broadcasting phase changes in (Verbosity mode) has been " ..
     (broadcastChangeVerbosity and "enabled" or "disabled") .. 'and the Phase Tracker will bring you to the Mythos Area.')
 end
+
+-- Functions to run
 
 function changeState(_, playerColor, isRightClick)
   -- get newId for all trackers
@@ -153,8 +157,6 @@ function changeState(_, playerColor, isRightClick)
     })
   end
 end
-
--- Added
 
 function expressChangeWithVerbosity(newId)
   -- This function shows every change in the Phase tracker
