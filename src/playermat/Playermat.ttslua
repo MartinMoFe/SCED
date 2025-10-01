@@ -1908,6 +1908,19 @@ function getThreatAreaPositions()
   return positions
 end
 
+-- Returns a list of objects in the threat area (max six)
+function getThreatAreaObjects()
+  
+  local objects = {}
+  for _, pos in ipairs(getThreatAreaObjects()) do
+    local thisObj = SearchLib.atPosition(pos, "isCardOrDeck")
+    if #thisObj > 0 then
+      table.insert(objects, thisObj[1])
+    end
+  end
+  return objects
+end
+
 -- creates / removes the draw 1 button
 ---@param visible? boolean Whether the draw 1 button should be visible
 function showDrawButton(visible)
