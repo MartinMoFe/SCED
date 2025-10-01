@@ -162,11 +162,9 @@ do
     return Vector(callForSingleMat(matColor, "getEncounterCardDrawPosition", stack))
   end
 
-  -- Returns the position of all the threat area positions
+  -- Returns the position of all the threat area positions, six in total
   function PlayermatApi.getThreatAreaPositions(matColor)
-    log('1')
     return callForSingleMat(matColor, "getThreatAreaPositions")
-    log('11')
   end
 
   -- Sets the requested playermat's snap points to limit snapping to matching card types or not
