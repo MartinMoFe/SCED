@@ -126,9 +126,14 @@ function changeState(_, playerColor, isRightClick)
       pingMythosPhase(playerColor)
     elseif pingAndLookAtPhase and newId == 2 then
       pingPlayerMiniCards(playerColor)
+    elseif pingAndLookAtPhase and newId == 3 then
+      local enemies = getEnemiesInPlayArea()
+      if #enemies == 1 then
+        pingSingleMonster(playerColor, enemies[1])
+      end     
     end
   end
-
+  --
 
   --
   local data = self.getData()
@@ -211,6 +216,12 @@ function pingPlayerMiniCards(playerColor)
   end
 end
 
+function pingSingleMonster(playerColor, monster)
+  pos = monster.getPosition()
+  pl = getPlayer(playerColor)
+  pl.pingTable(pos)
+end
+
 function showHandResourceInfo()
   local COLORS = { White = { 1, 1, 1 }, Orange = { 1, 0.5, 0 }, Green = { 0, 1, 0 }, Red = { 1, 0, 0 } }
   -- This shows how many cards and resources has every MatPlayer
@@ -226,19 +237,8 @@ function showHandResourceInfo()
 end
 
 function showEnemyInfo(colorPrint)
-  local enemies = {}
-  for _, obj in ipairs(getObjects()) do
-    if PlayAreaApi.isInPlayArea(obj) then
-      local description = obj.getDescription()
-      local rawNotes = obj.getGMNotes() or "{}"
-      local metadata = JSON.decode(rawNotes) or {}
-      local type = metadata['type'] or ''
-      if type == 'Enemy' then
-        table.insert(enemies, obj)
-        obj.highlightOn({ 0, 1, 0 }, 10)
-      end
-    end
-  end
+  -- This searches for all enemies in the play area and highlights them
+  local enemies = getEnemiesInPlayArea()
   local num = #enemies
   if num > 1 then
     printToAll('There are ' .. tostring(num) .. ' enemies', colorPrint)
@@ -266,4 +266,20 @@ function getObjectByName(name)
     end
   end
   return nil
+end
+
+function getEnemiesInPlayArea()
+  local enemies = {}
+  for _, obj in ipairs(getObjects()) do
+    if PlayAreaApi.isInPlayArea(obj) then
+      local rawNotes = obj.getGMNotes() or "{}"
+      local metadata = JSON.decode(rawNotes) or {}
+      local type = metadata['type'] or ''
+      if type == 'Enemy' then
+        table.insert(enemies, obj)
+        obj.highlightOn({ 0, 1, 0 }, 10)
+      end
+    end
+  end
+  return enemies
 end
