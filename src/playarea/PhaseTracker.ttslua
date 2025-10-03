@@ -183,7 +183,8 @@ function expressChangeWithVerbosity(newId)
   elseif newId == 3 then
     printToAll('End of Investigation Phase', color_bone)
     printToAll('Enemy Phase.', color_bone)
-    showEnemyInfo(color_bone)
+    showEnemyInPlayInfo(color_bone)
+    showEnemyInThreatAreaInfo()
   elseif newId == 4 then
     printToAll('End of Enemy Phase', color_bone)
     printToAll('Upkeep Phase.', color_bone)
@@ -240,7 +241,7 @@ function showHandResourceInfo()
   end
 end
 
-function showEnemyInfo(colorPrint)
+function showEnemyInPlayInfo(colorPrint)
   -- This searches for all enemies in the play area and highlights them
   local enemies = getEnemiesInPlayArea()
   local num = #enemies
@@ -248,6 +249,22 @@ function showEnemyInfo(colorPrint)
     printToAll('There are ' .. tostring(num) .. ' enemies', colorPrint)
   elseif num == 1 then
     printToAll('There is ' .. tostring(num) .. ' enemy', colorPrint)
+  end
+  highlightObjects(enemies, { r = 0, g = 1, b = 0 }, 10)
+end
+
+function showEnemyInThreatAreaInfo()
+  -- This searches for all enemies in the threat area of all mats and highlights them
+  local matColors = Player.getAvailableColors()
+  for _, matColor in ipairs(matColors) do
+    local enemies = getEnemiesInThreatArea(matColor)
+    local num = #enemies
+    if num > 1 then
+      printToAll(matColor .. ' has ' .. tostring(num) .. ' enemies in the threat area')
+    elseif num == 1 then
+        printToAll(matColor .. ' has ' .. tostring(num) .. ' enemy in the threat area')
+    end
+    highlightObjects(enemies, { r = 1, g = 0.5, b = 0 }, 10)
   end
 end
 
@@ -281,9 +298,28 @@ function getEnemiesInPlayArea()
       local type = metadata['type'] or ''
       if type == 'Enemy' then
         table.insert(enemies, obj)
-        obj.highlightOn({ 0, 1, 0 }, 10)
       end
     end
   end
   return enemies
+end
+
+function getEnemiesInThreatArea(matColor)
+  local enemies = {}
+  local  threats = PlayermatApi.getThreatAreaObjects(matColor)
+  for _, threat in ipairs(threats) do
+    local rawNotes = threat.getGMNotes() or "{}"
+    local metadata = JSON.decode(rawNotes) or {}
+    local type = metadata['type'] or ''
+    if type == 'Enemy' then
+      table.insert(enemies, threat)
+      end
+  end
+  return enemies
+end
+
+function highlightObjects(objects, color, duration)
+  for _, obj in ipairs(objects) do
+    obj.highlightOn(color, duration)
+  end
 end
