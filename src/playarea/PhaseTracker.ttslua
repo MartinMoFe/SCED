@@ -51,14 +51,6 @@ function onLoad(savedData)
   self.addContextMenuItem("Toggle Broadcasting", toggleBroadcast)
   self.addContextMenuItem("Toggle Verbosity Broadcasting", toggleBroadcastVerbosity)
   self.addContextMenuItem("Toggle Ping Mythos Area", togglePing)
-
-  -- detect player mats
-  local mats = {}
-  table.insert(mats, getObjectByName('Playermat 2: Orange'))
-  table.insert(mats, getObjectByName('Playermat 2: Orange'))
-  table.insert(mats, getObjectByName('Playermat 3: Green'))
-  table.insert(mats, getObjectByName('Playermat 4: Red'))
-  --log(PlayermatApi.getMatForColor('White'))
 end
 
 -- Context menu functions
@@ -350,28 +342,3 @@ function isSpecialEnemy(objMd)
   end
   return false
 end
-
--- Tests 
-
-function testOne()
-  -- No se pueden usar funciones de la API locales
-  local var = PlayermatApi.getMatForColor('All')
-end
-
-function testTwo()
-  -- No se pueden usar funciones de la API locales
-  local var = PlayermatApi.getMatForColor('White')
-end
-
-function testThree()
-  local var = PlayermatApi.getMatColorByPosition({ x = 2, y = 2, z = 2 })
-  return var
-end
-
-function testFour()
-  local var = PlayermatApi.getThreatAreaPositions('White')
-  log(var)
-  return var
-end
-
-
