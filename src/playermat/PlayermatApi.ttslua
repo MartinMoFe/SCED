@@ -164,7 +164,7 @@ do
   end
 
   -- Returns the positions of all the threat area slots, six in total
-  ---@param matColor string Does not support "All"?
+  ---@param matColor string Does not support "All"
   function PlayermatApi.getThreatAreaPositions(matColor)
     return callForSingleMat(matColor, "getThreatAreaPositions")
   end
@@ -172,7 +172,6 @@ do
   -- Returns a list of objects in the threat area of the mat
   ---@param matColor string Does not support "All"
   function PlayermatApi.getThreatAreaObjects(matColor)
-    log('Punto 1.5')
     return callForSingleMat(matColor, "getThreatAreaObjects")
   end
 

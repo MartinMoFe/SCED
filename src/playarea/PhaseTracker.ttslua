@@ -13,7 +13,6 @@ local PHASE_IMAGES = {
   "https://steamusercontent-a.akamaihd.net/ugc/982233321870235122/492996D07ABF6DDA4B605A3013C4892839DCF1F3/",
   "https://steamusercontent-a.akamaihd.net/ugc/982233321870237261/C287CAED2423970F33E72D6C7415CBEC6794C533/"
 }
-local specialEnemies        = {  ["03421"] = true, ["03422"] = false }
 
 function onSave()
   return JSON.encode({
@@ -270,9 +269,10 @@ function showEnemyInThreatAreaInfo()
 end
 
 
--- Helper
+-- Basic Helper functions
 
 function getPlayer(color)
+  --log('Calling getPlayer from the PhaseTracker code')
   for _, pl in ipairs(Player.getPlayers()) do
     if pl.color == color then
       return pl
@@ -290,15 +290,28 @@ function getObjectByName(name)
   return nil
 end
 
+function isin(item, list)
+  -- This is slow
+  for _, v in ipairs(list) do
+    if v == item then return true end
+  end
+  return false
+end
+
+-- helper functions for this script
+
 function getEnemiesInPlayArea()
+  -- returns a table
   local enemies = {}
   for _, obj in ipairs(getObjects()) do
     if PlayAreaApi.isInPlayArea(obj) then
       local rawNotes = obj.getGMNotes() or "{}"
       local md = JSON.decode(rawNotes) or {}
-      local id = md['id'] or ''
       local type = md['type'] or ''
       if type == 'Enemy' then
+        table.insert(enemies, obj)
+      elseif isSpecialEnemy(md) then
+        -- some cards are enemies but do not have the type 'Enemy' in their metadata, like the Hunter
         table.insert(enemies, obj)
       end
     end
@@ -325,3 +338,40 @@ function highlightObjects(objects, color, duration)
     obj.highlightOn(color, duration)
   end
 end
+
+function isSpecialEnemy(objMd)
+  -- Receives the metadata of an object
+  -- Returns boolean
+  local specialEnemies = { ["03241"] = true, ['01121a'] = true }
+  local id = objMd['id'] or ''
+  local isSpecial = specialEnemies[id] or false
+  if isSpecial then
+    return true
+  end
+  return false
+end
+
+-- Tests 
+
+function testOne()
+  -- No se pueden usar funciones de la API locales
+  local var = PlayermatApi.getMatForColor('All')
+end
+
+function testTwo()
+  -- No se pueden usar funciones de la API locales
+  local var = PlayermatApi.getMatForColor('White')
+end
+
+function testThree()
+  local var = PlayermatApi.getMatColorByPosition({ x = 2, y = 2, z = 2 })
+  return var
+end
+
+function testFour()
+  local var = PlayermatApi.getThreatAreaPositions('White')
+  log(var)
+  return var
+end
+
+
