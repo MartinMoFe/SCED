@@ -13,6 +13,7 @@ local PHASE_IMAGES = {
   "https://steamusercontent-a.akamaihd.net/ugc/982233321870235122/492996D07ABF6DDA4B605A3013C4892839DCF1F3/",
   "https://steamusercontent-a.akamaihd.net/ugc/982233321870237261/C287CAED2423970F33E72D6C7415CBEC6794C533/"
 }
+local specialEnemies        = {  ["03421"] = true, ["03422"] = false }
 
 function onSave()
   return JSON.encode({
@@ -294,8 +295,9 @@ function getEnemiesInPlayArea()
   for _, obj in ipairs(getObjects()) do
     if PlayAreaApi.isInPlayArea(obj) then
       local rawNotes = obj.getGMNotes() or "{}"
-      local metadata = JSON.decode(rawNotes) or {}
-      local type = metadata['type'] or ''
+      local md = JSON.decode(rawNotes) or {}
+      local id = md['id'] or ''
+      local type = md['type'] or ''
       if type == 'Enemy' then
         table.insert(enemies, obj)
       end
