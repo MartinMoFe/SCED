@@ -314,13 +314,16 @@ end
 function getEnemiesInThreatArea(matColor)
   local enemies = {}
   local  threats = PlayermatApi.getThreatAreaObjects(matColor)
-  for _, threat in ipairs(threats) do
-    local rawNotes = threat.getGMNotes() or "{}"
-    local metadata = JSON.decode(rawNotes) or {}
-    local type = metadata['type'] or ''
+  for _, obj in ipairs(threats) do
+    local rawNotes = obj.getGMNotes() or "{}"
+    local md = JSON.decode(rawNotes) or {}
+    local type = md['type'] or ''
     if type == 'Enemy' then
-      table.insert(enemies, threat)
-      end
+      table.insert(enemies, obj)
+    elseif isSpecialEnemy(md) then
+      -- some cards are enemies but do not have the type 'Enemy' in their metadata, like the Hunter
+      table.insert(enemies, obj)
+    end
   end
   return enemies
 end
