@@ -1749,20 +1749,20 @@ end
 function placeholder_download(params)
   function downloadCoroutine()
     -- show progress bar
-    UI.setAttribute('download_progress', 'active', true)
+    UI.setAttribute("download_progress", "active", true)
 
     -- update progress bar
     while requestObj do
-      UI.setAttribute('download_progress', 'percentage', requestObj.download_progress * 100)
+      UI.setAttribute("download_progress", "percentage", requestObj.download_progress * 100)
       CoroutineLib.yieldFrames()
     end
-    UI.setAttribute('download_progress', 'percentage', 100)
+    UI.setAttribute("download_progress", "percentage", 100)
 
     -- wait 30 frames
     CoroutineLib.yieldFrames(30)
 
     -- hide progress bar
-    UI.setAttribute('download_progress', 'active', false)
+    UI.setAttribute("download_progress", "active", false)
 
     -- hide download window
     if params.player then
@@ -3643,15 +3643,20 @@ function titleSplash(scenarioName)
     if waitIds["hideTitleSplash"] then
       Wait.stop(waitIds["hideTitleSplash"])
       waitIds["hideTitleSplash"] = nil
-      UI.setAttribute('title_splash', 'active', false)
+      UI.setAttribute("title_splash", "active", false)
     end
+
+    -- update the xml
+    UI.setAttributes("title_splash_text", {
+      font = i18n.getFont(),
+      text = scenarioName
+    })
 
     -- display scenario name and set a 4 seconds (2 seconds animation and 2 seconds on screen)
     -- wait timer to hide the scenario name
-    UI.setValue('title_splash_text', scenarioName)
-    UI.show('title_splash')
+    UI.show("title_splash")
     waitIds["hideTitleSplash"] = Wait.time(function()
-      UI.hide('title_splash')
+      UI.hide("title_splash")
       waitIds["hideTitleSplash"] = nil
     end, 4)
 
@@ -4203,7 +4208,7 @@ end
 
 -- Gets the right uses structure for this card, based on metadata and face up/down state
 ---@param card tts__Object Card to pull the uses from
-TokenManager.getUses = function(card)
+function TokenManager.getUses(card)
   local metadata = JSON.decode(card.getGMNotes()) or {}
   if metadata.type == "Location" then
     if card.is_face_down and metadata.locationBack ~= nil then
@@ -4221,7 +4226,7 @@ end
 ---@param card tts__Object Card the clues will be placed on
 ---@param count number How many clues?
 ---@return table: Array of global positions to spawn the clues at
-TokenManager.buildClueOffsets = function(card, count)
+function TokenManager.buildClueOffsets(card, count)
   -- make sure clues always spawn from left to right
   local modifier = card.is_face_down and 1 or -1
 
