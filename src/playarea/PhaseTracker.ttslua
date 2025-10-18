@@ -359,5 +359,3 @@ function isEnemy(objMd)
   local isSpecial = specialEnemies[id] or false
   return isSpecial
 end
-
-
