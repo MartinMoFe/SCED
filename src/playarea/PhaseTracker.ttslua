@@ -1,5 +1,4 @@
 local PlayermatApi = require("playermat/PlayermatApi")
-local PlayAreaApi  = require("playarea/PlayAreaApi")
 
 local PHASE_NAMES  = {
   "I. Mythos Phase",
@@ -260,7 +259,6 @@ function showEnemyInThreatAreaInfo()
   end
 end
 
-
 -- Basic Helper functions
 
 function getPlayer(color)
@@ -292,20 +290,35 @@ end
 
 -- helper functions for this script
 
+function scanPlayArea()
+  -- Returns all objects in the PlayArea (the central zone)
+  local zoneGUID = "a2f932"
+  local zone = getObjectFromGUID(zoneGUID)
+
+  if not zone then
+    log("Zone not found (GUID " .. zoneGUID .. ")")
+    return
+  end
+
+  if zone.tag ~= "Scripting" then
+    log("Object is not a ScriptingTrigger zone. Tag: " .. zone.tag)
+    return
+  end
+
+  -- Obtener los objetos dentro de la zona
+  local objs = zone.getObjects()
+  return objs
+end
+
 function getEnemiesInPlayArea()
   -- returns a table
   local enemies = {}
-  for _, obj in ipairs(getObjects()) do
-    if PlayAreaApi.isInPlayArea(obj) then
-      local rawNotes = obj.getGMNotes() or "{}"
-      local md = JSON.decode(rawNotes) or {}
-      local type = md['type'] or ''
-      if type == 'Enemy' then
-        table.insert(enemies, obj)
-      elseif isSpecialEnemy(md) then
-        -- some cards are enemies but do not have the type 'Enemy' in their metadata, like the Hunter
-        table.insert(enemies, obj)
-      end
+  local objs = scanPlayArea()
+  for _, obj in ipairs(objs) do
+    local rawNotes = obj.getGMNotes() or "{}"
+    local md = JSON.decode(rawNotes) or {}
+    if isEnemy(md) then
+      table.insert(enemies, obj)
     end
   end
   return enemies
@@ -318,12 +331,7 @@ function getEnemiesInThreatArea(matColor)
     local rawNotes = obj.getGMNotes() or "{}"
     local md = JSON.decode(rawNotes) or {}
     local type = md['type'] or ''
-    if type == 'Enemy' then
-      table.insert(enemies, obj)
-    elseif isSpecialEnemy(md) then
-      -- some cards are enemies but do not have the type 'Enemy' in their metadata, like the Hunter
-      table.insert(enemies, obj)
-    end
+    if isEnemy(md) then table.insert(enemies, obj) end
   end
   return enemies
 end
@@ -334,14 +342,22 @@ function highlightObjects(objects, color, duration)
   end
 end
 
-function isSpecialEnemy(objMd)
+function isEnemy(objMd)
   -- Receives the metadata of an object
   -- Returns boolean
-  local specialEnemies = { ["03241"] = true, ['01121a'] = true }
-  local id = objMd['id'] or ''
-  local isSpecial = specialEnemies[id] or false
-  if isSpecial then
+  local type = objMd['type'] or ''
+  if type == 'Enemy' then
     return true
   end
-  return false
+  -- Second check
+  local specialEnemies = {
+    ["03241"] = true,
+    ['01121a'] = true,
+    ['50026a'] = true
+  }
+  local id = objMd['id'] or ''
+  local isSpecial = specialEnemies[id] or false
+  return isSpecial
 end
+
+
